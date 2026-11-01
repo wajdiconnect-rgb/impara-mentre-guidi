@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impara mentre guidi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#c9d6ea;--panel:#ffffff;--line:#9fb3d4;--gold:#1e40af;--acc:#1e3a8a;--tx:#0f1e3d;--mut:#3f5276;--paper:#ffffff;--ink:#0f1e3d;--ok:#16a34a;--ko:#dc2626;--head:#1e3a8a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1430}}
+:root[data-theme="dark"]{--bg:#0a1430}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:light}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:16px/1.45 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;cursor:pointer;color:inherit}
+.cond{font-family:"Barlow Condensed",Inter,sans-serif}
+/* schermata unica */
+.screen{height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) minmax(0,1.15fr) auto;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+.bar{display:flex;align-items:center;gap:10px}
+.bar h1{margin:0;flex:1;font:800 clamp(20px,3.5vw,28px) "Barlow Condensed";color:var(--acc);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.small{border:1px solid var(--acc);background:var(--panel);border-radius:10px;padding:5px 10px;font-size:13px;font-weight:700;color:var(--acc)}
+.box{position:relative;border-radius:16px;overflow:hidden;border:2px solid var(--acc);background:var(--panel);box-shadow:0 3px 12px #0f1e3d33}
+#map{position:absolute;inset:0}
+.mapmsg{position:absolute;left:8px;top:8px;z-index:5;font-size:12px;background:#000a;color:#fff;padding:3px 8px;border-radius:8px}
+.cam{position:absolute;right:8px;bottom:8px;width:min(40%,300px);aspect-ratio:4/3;border-radius:10px;overflow:hidden;border:2px solid #fff;background:#000;z-index:6;transition:opacity .6s,transform .6s}
+.cam.off{opacity:0;transform:scale(.85);pointer-events:none}
+.cam video{width:100%;height:100%;object-fit:cover}
+.cam span{position:absolute;left:6px;top:6px;font-size:11px;font-weight:700;background:var(--ko);padding:1px 6px;border-radius:6px}
+.low{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px;min-height:0}
+.sign{background:var(--paper);color:var(--ink);display:flex;flex-direction:column;min-height:0}
+.shead{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--head);color:#fff}
+.shead .n{flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:#fbbf24;color:#1a1300;font:800 16px "Barlow Condensed";display:grid;place-items:center}
+.shead b{font:800 clamp(17px,2.2vw,22px)/1.05 "Barlow Condensed";text-transform:uppercase}
+.sbody{flex:1;min-height:0;display:flex;gap:12px;padding:10px;overflow:auto}
+.simg{flex:none;width:clamp(80px,13vw,150px);aspect-ratio:1;display:grid;place-items:center}
+.simg img,.simg svg{max-width:100%;max-height:100%}
+.cat{font-size:12px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.stext{font-size:clamp(14px,1.6vw,17px);font-weight:600;line-height:1.38}
+.photo{background:#000}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.photo img#phbg{object-fit:cover;filter:blur(18px) brightness(.75);transform:scale(1.15)}
+.foot{display:flex;align-items:center;gap:8px}
+.pb{flex:1;height:7px;border-radius:4px;background:#9fb3d4;overflow:hidden}.pb i{display:block;height:100%;background:var(--gold);transition:width .4s}
+.st{font-size:12px;color:var(--mut);white-space:nowrap}
+.mic{font-size:12px;color:var(--mut)}
+.mic.on{color:var(--acc)}
+/* quiz dentro lo stesso schermo */
+.qbig{font-size:clamp(17px,2.3vw,22px);font-weight:700}
+.vf{display:flex;gap:8px;margin-top:10px}
+.vf button{flex:1;padding:10px;border-radius:10px;border:2px solid var(--ink);background:#fff;font:800 20px "Barlow Condensed";color:var(--ink)}
+.vf button.sel-ok{background:var(--ok);color:#fff;border-color:var(--ok)}.vf button.sel-ko{background:var(--ko);color:#fff;border-color:var(--ko)}
+.ans{margin-top:8px;font-weight:700}
+/* avvio */
+.start{position:fixed;inset:0;z-index:50;background:#c9d6eaf7;display:grid;place-items:center;padding:20px;text-align:center}
+.start .card{max-width:480px}
+.start h2{font:800 38px "Barlow Condensed";color:var(--acc);margin:0 0 6px;text-transform:uppercase}
+.go{width:180px;height:180px;border-radius:50%;border:0;background:var(--acc);color:#fff;font:800 30px "Barlow Condensed";box-shadow:0 0 0 12px #3b82f622;margin:18px auto;display:block}
+.start p{color:var(--mut);margin:6px 0}
+.chk{text-align:left;margin:14px auto 0;max-width:360px;font-size:14px}
+.chk div{padding:3px 0}
+/* menu */
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--tx);max-width:560px;width:calc(100% - 24px);max-height:88dvh;padding:16px}
+dialog::backdrop{background:#0f172a66}
+dialog h3{margin:14px 0 6px;color:var(--acc);font:800 20px "Barlow Condensed";text-transform:uppercase}
+.list button{display:block;width:100%;text-align:left;margin:4px 0;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+dialog label{display:block;margin:10px 0 4px;font-weight:700}
+dialog input,dialog select{width:100%;font:inherit;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx)}
+.note{font-size:12px;color:var(--mut);margin-top:4px}
+.row{display:flex;gap:8px;margin-top:12px}.row button{flex:1;padding:11px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700}
+.row button.alt{background:var(--bg);color:var(--tx);border:1px solid var(--line)}
+.hidden{display:none!important}
+body:not(.read) .simg{width:clamp(110px,22vw,200px)}
+body.night{--bg:#0a1228;--panel:#14213f;--line:#2b3f6e;--acc:#93b4ff;--tx:#e8eefc;--mut:#a9b8d9;--paper:#14213f;--ink:#e8eefc;--head:#0f2a6b}
+body.night .box{border-color:#2b4a9a;box-shadow:none}
+body.night .small{background:#14213f;color:#cfe0ff;border-color:#2b4a9a}
+body.night .vf button{background:#0f1a36;color:#fff;border-color:#4b66a8}
+body.night .cat{color:#9db8ff}
+body.night .start{background:#0a1228f7}
+body.night .leaflet-container{background:#101b38}
+body.night .leaflet-tile{filter:invert(1) hue-rotate(200deg) brightness(.85) contrast(.9)}
+body{transition:background .6s,color .6s}
+.tun{position:absolute;right:8px;top:8px;z-index:6;font-size:12px;font-weight:700;background:#fbbf24;color:#1a1300;padding:3px 8px;border-radius:8px}
+body:not(.read) .stext,body:not(.read) .qbig,body:not(.read) .ans,body:not(.read) .st{display:none}
+.voiceonly{display:flex;align-items:center;justify-content:center;flex:1;color:var(--acc);font-size:15px;font-weight:700;gap:6px}
+body.read .voiceonly{display:none}
+.small.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.leaflet-container{background:#b7c7e2}.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-tile-container,.leaflet-map-pane svg,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}.leaflet-tile{width:256px;height:256px;user-select:none}.leaflet-control-container{display:none}
+.tilt{position:absolute;inset:-25% -15% 0 -15%;transform:perspective(700px) rotateX(48deg);transform-origin:50% 100%}
+.maplibregl-canvas{position:absolute;left:0;top:0}.maplibregl-ctrl-attrib,.maplibregl-ctrl{display:none}.maplibregl-marker{position:absolute;left:0;top:0}
+@media (max-width:700px){
+ .screen{grid-template-rows:auto minmax(0,.8fr) minmax(0,1.6fr) auto}
+ .low{grid-template-columns:1fr;grid-template-rows:minmax(0,.85fr) minmax(0,1.15fr)}
+}
+</style>
+</head>
+<body>
+<div class="screen">
+ <div class="bar"><h1>Impara mentre guidi</h1><span class="mic" id="mic"></span><button class="small" id="bTheme" onclick="cycleTheme()">🌗 Auto</button><button class="small" id="bRead" onclick="toggleRead()">📖 Leggi</button><button class="small" onclick="openMenu()">☰ Menu</button></div>
+ <div class="box" id="mapbox"><div id="map"></div><div class="mapmsg" id="mapmsg">Mappa…</div><div class="tun hidden" id="tun">🚇 Galleria</div>
+  <div class="cam off" id="cam"><video id="vid" playsinline muted autoplay></video><span>● TELECAMERA</span></div></div>
+ <div class="low">
+  <section class="box sign" id="sign"></section>
+  <section class="box photo"><img id="phbg" alt=""><img id="ph" alt=""></section>
+ </div>
+ <div class="foot"><div class="pb"><i id="pbar"></i></div><span class="st" id="st"></span></div>
+</div>
+
+<div class="start" id="start"><div class="card">
+ <h2>Impara mentre guidi</h2>
+ <p>Tocca una volta sola per partire. Poi l'app va avanti da sola: spiega i cartelli a voce, fa i quiz e ascolta le tue risposte.</p>
+ <button class="go" onclick="begin()">▶ INIZIA</button>
+ <p style="font-size:13px">Il tocco iniziale serve perché l'iPhone non lascia parlare una pagina e non accende la telecamera senza il tuo permesso.</p>
+ <div class="chk" id="chk"></div>
+</div></div>
+
+<dialog id="menu">
+ <div style="display:flex;justify-content:space-between;align-items:center"><b class="cond" style="font-size:24px;color:var(--acc)">MENU</b><button class="small" onclick="$('menu').close()">✕ Chiudi</button></div>
+ <h3>Comandi a voce</h3>
+ <div class="note">Di' «avanti», «indietro», «ripeti», «pausa», «riprendi», «quiz», «esame», oppure «vero» o «falso» durante il quiz.</div>
+ <h3>Lezioni cartelli</h3><div class="list" id="lc"></div>
+ <h3>Teoria</h3><div class="list" id="lt"></div>
+ <h3>Esame</h3><div class="list"><button onclick="$('menu').close();startExam()">📝 Simulazione d'esame: 30 domande, 20 minuti, massimo 3 errori</button></div>
+ <h3>Voce</h3>
+ <select id="eng"><option value="apple">Voce del dispositivo (gratis, anche offline)</option><option value="eleven">ElevenLabs (voce umana, serve la chiave)</option></select>
+ <div id="appleBox"><label>Voce italiana</label><select id="avoice"></select><div class="note">Su iPhone: Impostazioni › Accessibilità › Contenuto letto ad alta voce › Voci › Italiano: scarica una voce Premium o Migliorata, poi ricarica la pagina.</div></div>
+ <div id="elBox"><label>Chiave API ElevenLabs</label><input id="ekey" type="password" autocomplete="off" placeholder="Resta salvata solo su questo dispositivo">
+  <div class="row"><button class="alt" onclick="loadElVoices()">Carica le mie voci</button></div><label>Voce</label><select id="evoice"><option value="">—</option></select></div>
+ <label>Velocità: <span id="rateV"></span></label><input id="rate" type="range" min="0.6" max="1.2" step="0.05">
+ <div class="note" id="vstat"></div>
+ <div class="row"><button class="alt" onclick="testVoice()">🔊 Prova voce</button><button class="alt" onclick="testCam()">📷 Prova telecamera</button><button onclick="saveSet()">Salva</button></div>
+</dialog>
+
+<script src="data.js"></script>
+<script>
+const $=s=>document.getElementById(s);
+const LS={get(k,d){try{const v=localStorage.getItem("img3_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem("img3_"+k,JSON.stringify(v))}catch(e){}}};
+let CFG=Object.assign({eng:"apple",avoice:"",ekey:"",evoice:"",rate:0.85},LS.get("cfg",{}));
+let POS=LS.get("pos",{step:0});
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const catOf=id=>CATS.find(c=>c.id===id);
+const NOIC=['pann_orario','ag_braccia','ag_alzato','ag_mov'];
+const SVG={
+ lavori:`<svg viewBox="0 0 100 90"><path d="M50 5 95 85H5Z" fill="#ffd400" stroke="#e30613" stroke-width="9" stroke-linejoin="round"/><circle cx="56" cy="38" r="5"/><path d="M53 44l-9 9 4 14-6 10h6l5-9-1-9 6-6 2 13h5l-2-16z"/><path d="M40 55l22 16" stroke="#000" stroke-width="2.5"/><path d="M58 72h16l-8-8z"/></svg>`,
+ centro:`<svg viewBox="0 0 140 90"><rect x="3" y="3" width="134" height="84" rx="6" fill="#fff" stroke="#111" stroke-width="5"/><path d="M14 66h112v-12h-8v-10h-6v10h-10V40l-8-14-8 14v14h-8V44h-8v10H64V36h-4V24h-4v12h-4v18H40V46h-10v8h-8v-6h-8z"/><text x="70" y="82" font-family="Arial" font-weight="700" font-size="13" text-anchor="middle">BRESCIA</text></svg>`,
+ fine_centro:`<svg viewBox="0 0 140 90"><rect x="3" y="3" width="134" height="84" rx="6" fill="#fff" stroke="#111" stroke-width="5"/><path d="M14 66h112v-12h-8v-10h-6v10h-10V40l-8-14-8 14v14h-8V44h-8v10H64V36h-4V24h-4v12h-4v18H40V46h-10v8h-8v-6h-8z"/><text x="70" y="82" font-family="Arial" font-weight="700" font-size="13" text-anchor="middle">BRESCIA</text><path d="M10 80 130 12" stroke="#e30613" stroke-width="9"/></svg>`,
+ ztl:`<svg viewBox="0 0 100 120"><rect x="3" y="3" width="94" height="114" rx="6" fill="#fff" stroke="#111" stroke-width="4"/><text x="50" y="24" font-family="Arial" font-weight="700" font-size="13" text-anchor="middle">zona</text><text x="50" y="40" font-family="Arial" font-weight="700" font-size="11.5" text-anchor="middle">traffico limitato</text><circle cx="50" cy="80" r="26" fill="#fff" stroke="#e30613" stroke-width="9"/></svg>`};
+const icoSrc=s=>NOIC.includes(s.id)?'img/'+s.id+'.jpg':'img/'+s.id+'_s.png';
+const signImg=s=>s.svg?SVG[s.svg]:`<img src="${icoSrc(s)}" alt="" ${NOIC.includes(s.id)?'style="border-radius:10px;width:100%;height:100%;object-fit:cover"':''}>`;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+// ---------- programma: ogni categoria = spiegazioni + quiz subito dopo; poi teoria; poi esame ----------
+function signQs(s){const others=SIGNS.filter(o=>o.c===s.c&&o.id!==s.id);const o=others[(s.id.length*7)%others.length];
+ return [["Il segnale raffigurato indica: "+s.n.toLowerCase(),1],["Il segnale raffigurato indica: "+o.n.toLowerCase(),0]].concat(s.q.map(x=>[x[0].replace(/^Il segnale/,"Il segnale raffigurato"),x[1]])).map(x=>({t:x[0],a:!!x[1],s,ex:s.t}))}
+function buildPlan(){const P=[];
+ CATS.forEach(c=>{const l=SIGNS.filter(s=>s.c===c.id);P.push({k:"intro",title:c.n,text:c.intro,img:l[0].id});l.forEach((s,i)=>P.push({k:"sign",s,i:i+1,n:l.length}));
+  const seen=new Set();shuffle(l.flatMap(signQs)).filter(q=>!seen.has(q.t)&&seen.add(q.t)).slice(0,Math.min(12,l.length*2)).forEach((q,i,arr)=>P.push({k:"q",q,i:i+1,n:arr.length,lesson:c.n}))});
+ THEORY.forEach(t=>{t.p.forEach((p,i)=>P.push({k:"th",t,p,i:i+1,n:t.p.length}));t.q.forEach((x,i)=>P.push({k:"q",q:{t:x[0],a:!!x[1],ex:t.p.join(" ")},i:i+1,n:t.q.length,lesson:t.n}))});
+ return P}
+const PLAN=buildPlan();
+
+// ---------- voce ----------
+const V={audio:new Audio(),tok:0,paused:false,last:null,cb:null,cache:new Map(),speaking:false};
+function appleVoices(){try{return speechSynthesis.getVoices().filter(v=>/^it/i.test(v.lang)).sort((a,b)=>score(b)-score(a))}catch(e){return[]}}
+function score(v){const n=v.name.toLowerCase();return(/premium/.test(n)?4:0)+(/enhanced|migliorata|avanzata/.test(n)?3:0)+(/luca|federica|alice|paola|emma/.test(n)?1:0)-(/google|compact|eloquence|grandpa|grandma|rocko|shelley|sandy|reed|flo/.test(n)?2:0)}
+function stopVoice(){V.tok++;try{speechSynthesis.cancel()}catch(e){}V.audio.pause();V.speaking=false}
+async function say(text,cb){stopVoice();const k=V.tok;V.last=text;V.cb=cb||null;V.speaking=true;
+ const done=()=>{if(k!==V.tok)return;V.speaking=false;cb&&cb()};
+ if(CFG.eng==="eleven"&&CFG.ekey&&CFG.evoice){try{await sayEleven(text,k,done);return}catch(e){status("ElevenLabs non risponde ("+e.message+"): uso la voce del dispositivo.")}}
+ if(k===V.tok)sayApple(text,k,done)}
+function sayApple(text,k,done){const y=window.speechSynthesis;if(!y){setTimeout(done,text.length*55);return}
+ const parts=text.match(/[^.!?;:]+[.!?;:]*/g)||[text];let i=0;const vv=appleVoices().find(v=>v.name===CFG.avoice)||appleVoices()[0];
+ const next=()=>{if(k!==V.tok)return;if(i>=parts.length){done();return}const u=new SpeechSynthesisUtterance(parts[i++].trim());u.lang="it-IT";u.rate=CFG.rate;if(vv)u.voice=vv;u.onend=next;u.onerror=next;y.speak(u)};next()}
+async function sayEleven(text,k,done){let url=V.cache.get(CFG.evoice+"|"+text);
+ if(!url){const r=await fetch("https://api.elevenlabs.io/v1/text-to-speech/"+encodeURIComponent(CFG.evoice)+"?output_format=mp3_44100_128",{method:"POST",headers:{"xi-api-key":CFG.ekey,"Content-Type":"application/json",Accept:"audio/mpeg"},body:JSON.stringify({text,model_id:"eleven_multilingual_v2",language_code:"it",voice_settings:{stability:.5,similarity_boost:.75,speed:Math.max(.7,Math.min(1.2,CFG.rate+.1))}})});
+  if(!r.ok)throw new Error("errore "+r.status);url=URL.createObjectURL(await r.blob());V.cache.set(CFG.evoice+"|"+text,url)}
+ if(k!==V.tok)return;V.audio.src=url;V.audio.onended=done;await V.audio.play()}
+function pause(){V.paused=true;stopVoice();clearTimeout(QT);status("In pausa. Di' «riprendi».")}
+function resume(){V.paused=false;run()}
+
+// ---------- ascolto comandi ----------
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,listening=false,want=null;
+function startListen(){if(!SR){$("mic").textContent="🎙 comandi vocali non disponibili";return}
+ try{rec=new SR();rec.lang="it-IT";rec.continuous=true;rec.interimResults=false;
+  rec.onresult=e=>{const w=e.results[e.results.length-1][0].transcript.toLowerCase().trim();onWord(w)};
+  rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){$("mic").textContent="🎙 microfono bloccato";listening=false}};
+  rec.onend=()=>{if(listening)setTimeout(()=>{try{rec.start()}catch(e){}},400)};
+  rec.start();listening=true;$("mic").textContent="🎙 ti ascolto";$("mic").classList.add("on")}catch(e){$("mic").textContent="🎙 non disponibile"}}
+function onWord(w){if(V.speaking&&!/pausa|ferma|stop|basta/.test(w)&&!(want&&/vero|falso/.test(w)))return;
+ if(/pausa|ferma|basta/.test(w))return pause();
+ if(/riprendi|continua|vai/.test(w))return resume();
+ if(/avanti|prossim|salta/.test(w)){POS.step=Math.min(PLAN.length-1,POS.step+1);return run()}
+ if(/indietro|precedente/.test(w)){POS.step=Math.max(0,POS.step-1);return run()}
+ if(/ripeti|ancora/.test(w))return run();
+ if(/esame/.test(w))return startExam();
+ if(/quiz/.test(w)){const j=PLAN.findIndex((p,i)=>i>POS.step&&p.k==="q");if(j>0){POS.step=j;run()}return}
+ if(want){if(/^(è )?vero|giusto|sì/.test(w))want(true);else if(/falso|sbagliato|no\b/.test(w))want(false)}}
+
+// ---------- motore: tutto sullo stesso schermo, avanza da solo ----------
+let QT=null,EX=null;
+function status(t){$("st").textContent=t}
+function prog(){const p=PLAN[POS.step];$("pbar").style.width=((POS.step+1)/PLAN.length*100)+"%";LS.set("pos",POS)}
+function setPhoto(id){if(id){$("ph").src=$("phbg").src="img/"+id+".jpg"}}
+function head(n,b){return `<div class="shead"><span class="n">${n}</span><b>${esc(b)}</b></div>`}
+const VO='<div class="voiceonly">🔊 Ascolta la spiegazione</div>';
+function toggleRead(){document.body.classList.toggle("read");const on=document.body.classList.contains("read");$("bRead").classList.toggle("on",on);$("bRead").textContent=on?"📖 Nascondi":"📖 Leggi";LS.set("read",on)}
+function run(){clearTimeout(QT);want=null;if(V.paused)return;if(EX)return runExam();const p=PLAN[POS.step];if(!p)return;prog();const nx=()=>{if(!V.paused){POS.step++;if(POS.step>=PLAN.length){POS.step=0;say("Hai finito tutto il programma. Adesso facciamo la simulazione d'esame.",startExam);return}QT=setTimeout(run,700)}};
+ if(p.k==="intro"){$("sign").innerHTML=head("★",p.title)+`<div class="sbody">${VO}<div class="stext">${esc(p.text)}</div></div>`;setPhoto(p.img);status("Lezione: "+p.title);say(p.title+". "+p.text,nx)}
+ else if(p.k==="sign"){const s=p.s;$("sign").innerHTML=head(p.i+"/"+p.n,s.n)+`<div class="sbody"><div class="simg">${signImg(s)}</div><div style="flex:1;display:flex;flex-direction:column"><div class="cat">${esc(catOf(s.c).n)}</div><div class="stext">${esc(s.t)}</div>${VO}</div></div>`;setPhoto(s.id);status(catOf(s.c).n);say(s.t,nx)}
+ else if(p.k==="th"){$("sign").innerHTML=head(p.i+"/"+p.n,p.t.n)+`<div class="sbody">${VO}<div class="stext">${esc(p.p)}</div></div>`;status("Teoria: "+p.t.n);say(p.p,nx)}
+ else if(p.k==="q"){askQ(p.q,"Quiz "+p.i+"/"+p.n,p.lesson,ok=>nx())}}
+function askQ(q,lab,lesson,after,examMode){
+ $("sign").innerHTML=head(lab,lesson)+`<div class="sbody">${q.s?`<div class="simg">${signImg(q.s)}</div>`:""}<div style="flex:1"><div class="voiceonly" style="justify-content:flex-start">🔊 Ascolta la domanda e rispondi a voce</div><div class="qbig">${esc(q.t)}</div><div class="vf"><button id="bv" onclick="want&&want(true)">VERO</button><button id="bf" onclick="want&&want(false)">FALSO</button></div><div class="ans" id="ans"></div></div></div>`;
+ if(q.s)setPhoto(q.s.id);status(examMode?"Esame":"Quiz — rispondi a voce: vero o falso");
+ let answered=false;
+ const resolve=(v,auto)=>{if(answered)return;answered=true;want=null;clearTimeout(QT);const ok=v===q.a;
+  if(!auto){$(v?"bv":"bf").classList.add(ok?"sel-ok":"sel-ko")}
+  if(examMode){after(ok);return}
+  $("ans").textContent=(auto?"Risposta: ":ok?"✔ Giusto! ":"✘ Sbagliato. ")+(q.a?"VERO":"FALSO");
+  say((auto?"La risposta è ":ok?"Giusto. La risposta è ":"Sbagliato. La risposta corretta è ")+(q.a?"vero. ":"falso. ")+(ok&&!auto?"":q.ex),()=>after(ok))};
+ say(q.t+". Vero o falso?",()=>{want=v=>resolve(v,false);QT=setTimeout(()=>resolve(q.a,true),examMode?15000:9000)});
+ want=v=>resolve(v,false)}
+// ---------- esame ----------
+function startExam(){$("menu").open&&$("menu").close();const all=SIGNS.flatMap(signQs).concat(THEORY.flatMap(t=>t.q.map(x=>({t:x[0],a:!!x[1],ex:""}))));
+ const pick=[],seen=new Set(),per={};for(const q of shuffle(all)){const key=q.s?q.s.id:q.t;if(seen.has(q.t)||(per[key]||0)>=2)continue;seen.add(q.t);per[key]=(per[key]||0)+1;pick.push(q);if(pick.length===30)break}
+ EX={qs:pick,i:0,err:0,end:Date.now()+20*60000};V.paused=false;say("Simulazione d'esame. Trenta domande, venti minuti, massimo tre errori. Si comincia.",runExam)}
+function runExam(){if(V.paused)return;const left=Math.max(0,Math.round((EX.end-Date.now())/1000));
+ if(EX.i>=EX.qs.length||left<=0){const e=EX.err+(EX.qs.length-EX.i);const pass=e<=3;EX=null;
+  $("sign").innerHTML=head("✓","Esito esame")+`<div class="sbody"><div class="qbig">${pass?"PROMOSSO":"NON SUPERATO"} — errori: ${e} su 30</div></div>`;
+  say(pass?"Complimenti, esame superato con "+e+" errori.":"Esame non superato: "+e+" errori. Il massimo è tre. Ripassiamo le lezioni.",()=>{QT=setTimeout(run,1500)});return}
+ $("pbar").style.width=(EX.i/30*100)+"%";
+ askQ(EX.qs[EX.i],"Domanda "+(EX.i+1)+"/30 · "+Math.floor(left/60)+" min","Esame",ok=>{if(!ok)EX.err++;EX.i++;QT=setTimeout(runExam,500)},true)}
+
+// ---------- telecamera: si accende da sola ogni tanto ----------
+let stream=null,camTimer=null,camOK=null;
+async function camOn(){if(!stream){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});$("vid").srcObject=stream;camOK=true}catch(e){camOK=false;return false}}$("cam").classList.remove("off");return true}
+function camOff(){$("cam").classList.add("off")}
+function camCycle(){clearInterval(camTimer);camTimer=setInterval(async()=>{if(await camOn())setTimeout(camOff,25000)},90000)}
+async function testCam(){const ok=await camOn();if(ok){say("La telecamera è accesa. La vedi in basso a destra sulla mappa. Fra venti secondi si spegne e poi si riaccende da sola ogni minuto e mezzo.");setTimeout(camOff,20000)}else{say("Non riesco ad accendere la telecamera: il browser l'ha bloccata.");status("Telecamera bloccata: in Safari tocca aA › Impostazioni sito › Fotocamera › Consenti")}}
+
+// ---------- mappa: prova 3D vettoriale, se non va usa la mappa a tasselli inclinata ----------
+let map=null,mapKind="",me=null,lastPos=null;
+function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+async function initMap(){$("mapmsg").textContent="Carico la mappa…";
+ const timeout=ms=>new Promise((_,ko)=>setTimeout(()=>ko(new Error("tempo")),ms));
+ try{await loadScript("https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js");
+  await Promise.race([new Promise((ok,ko)=>{map=new maplibregl.Map({container:"map",style:"https://tiles.openfreemap.org/styles/liberty",center:[10.2118,45.5416],zoom:16.5,pitch:62,bearing:-20,attributionControl:false,interactive:false});map.on("load",ok);map.on("error",e=>ko(e.error||new Error("tile")))}),timeout(8000)]);
+  mapKind="3d";$("mapmsg").textContent="Mappa 3D · © OpenStreetMap";tint3d(document.body.classList.contains("night"));return}catch(e){try{map&&map.remove()}catch(_){}map=null;$("map").innerHTML=""}
+ try{await loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js");
+  $("map").innerHTML='<div class="tilt" id="lmap"></div>';map=L.map("lmap",{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,touchZoom:false,doubleClickZoom:false,keyboard:false}).setView([45.5416,10.2118],17);
+  const t=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19});let loaded=false;t.on("tileload",()=>{if(!loaded){loaded=true;$("mapmsg").textContent="Mappa inclinata · © OpenStreetMap"}});t.on("tileerror",()=>{if(!loaded)$("mapmsg").textContent="La mappa è bloccata da questa pagina"});t.addTo(map);mapKind="flat";setTimeout(()=>map.invalidateSize(),300)}
+ catch(e){$("mapmsg").textContent="Mappa non disponibile qui"}}
+function gps(){if(!navigator.geolocation){return}
+ navigator.geolocation.watchPosition(p=>{lastPos=[p.coords.latitude,p.coords.longitude];lastFix=Date.now();lastSpeed=p.coords.speed||0;if(!map)return;
+  if(mapKind==="3d"){const c=[lastPos[1],lastPos[0]];if(!me)me=new maplibregl.Marker({color:"#f5c542"}).setLngLat(c).addTo(map);else me.setLngLat(c);map.easeTo({center:c,bearing:p.coords.heading||map.getBearing(),duration:900})}
+  else if(mapKind==="flat"){if(!me)me=L.circleMarker(lastPos,{radius:9,color:"#fff",weight:3,fillColor:"#f5c542",fillOpacity:1}).addTo(map);else me.setLatLng(lastPos);map.panTo(lastPos)}},
+ e=>{status("GPS non consentito: la mappa resta ferma.")},{enableHighAccuracy:true,maximumAge:3000})}
+
+// ---------- avvio ----------
+async function begin(){$("start").classList.add("hidden");
+ try{speechSynthesis.speak(new SpeechSynthesisUtterance(""))}catch(e){} // sblocca la voce su iPhone
+ initMap();gps();startListen();
+ const c=await camOn();if(c)setTimeout(camOff,20000);camCycle();
+ say(POS.step>0?"Bentornato. Riprendo da dove eri rimasto.":"Ciao, sono il tuo istruttore. Cominciamo con i segnali di pericolo. Non toccare il telefono: per comandarmi parla.",run)}
+function checks(){const r=[["Voce",!!window.speechSynthesis],["Comandi vocali",!!SR],["Telecamera",!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)],["GPS",!!navigator.geolocation]];
+ $("chk").innerHTML=r.map(x=>`<div>${x[1]?"✔":"✘"} ${x[0]}${x[1]?"":" — non disponibile su questo browser"}</div>`).join("")}
+// ---------- menu ----------
+function openMenu(){$("lc").innerHTML=CATS.map(c=>`<button onclick="jump(PLAN.findIndex(p=>p.k==='intro'&&p.title===${JSON.stringify(c.n).replace(/"/g,"&quot;")}))">${esc(c.n)} · ${SIGNS.filter(s=>s.c===c.id).length} cartelli + quiz</button>`).join("");
+ $("lt").innerHTML=THEORY.map(t=>`<button onclick="jump(PLAN.findIndex(p=>p.k==='th'&&p.t.id==='${t.id}'))">${esc(t.n)}</button>`).join("");
+ $("eng").value=CFG.eng;$("ekey").value=CFG.ekey;$("rate").value=CFG.rate;$("rateV").textContent=CFG.rate;fillApple();togEng();$("vstat").textContent="";$("menu").showModal()}
+function jump(i){$("menu").close();EX=null;V.paused=false;POS.step=Math.max(0,i);run()}
+function fillApple(){const l=appleVoices();$("avoice").innerHTML=l.length?l.map(v=>`<option ${v.name===CFG.avoice?"selected":""} value="${esc(v.name)}">${esc(v.name)}${score(v)>=3?" ★":""}</option>`).join(""):"<option value=''>Voce italiana di sistema</option>"}
+try{speechSynthesis.onvoiceschanged=fillApple}catch(e){}
+function togEng(){$("appleBox").classList.toggle("hidden",$("eng").value!=="apple");$("elBox").classList.toggle("hidden",$("eng").value!=="eleven")}
+$("eng").onchange=togEng;$("rate").oninput=e=>$("rateV").textContent=e.target.value;
+function readSet(){CFG.eng=$("eng").value;CFG.ekey=$("ekey").value.trim();CFG.avoice=$("avoice").value;if($("evoice").value)CFG.evoice=$("evoice").value;CFG.rate=+$("rate").value}
+function testVoice(){readSet();say("Ciao, sono il tuo istruttore. Questo è il segnale di STOP: devi fermarti sempre e dare la precedenza a destra e a sinistra.")}
+function saveSet(){readSet();LS.set("cfg",CFG);$("menu").close();run()}
+async function loadElVoices(){const key=$("ekey").value.trim();if(!key){$("vstat").textContent="Incolla prima la chiave.";return}$("vstat").textContent="Carico le voci…";
+ try{const r=await fetch("https://api.elevenlabs.io/v1/voices",{headers:{"xi-api-key":key}});if(!r.ok)throw new Error("errore "+r.status);const j=await r.json();
+  $("evoice").innerHTML=j.voices.map(v=>`<option value="${esc(v.voice_id)}" ${v.voice_id===CFG.evoice?"selected":""}>${esc(v.name)}</option>`).join("");$("vstat").textContent=j.voices.length+" voci trovate."}
+ catch(e){$("vstat").textContent="Non riesco a collegarmi a ElevenLabs da questa pagina ("+e.message+")."}}
+document.addEventListener("securitypolicyviolation",e=>{const u=e.blockedURI||"";if(/openfreemap|openstreetmap|unpkg|cdnjs/.test(u))$("mapmsg").textContent="Mappa bloccata dalla pagina ("+u.split("/")[2]+")";if(/elevenlabs/.test(u))status("ElevenLabs bloccato da questa pagina: uso la voce del dispositivo.")});
+
+// ---------- giorno / notte / galleria ----------
+let THEME=LS.get("theme","auto"),inTunnel=false,lastFix=Date.now(),lastSpeed=0;
+function isNightByClock(){const d=new Date(),m=d.getMonth(),h=d.getHours()+d.getMinutes()/60;
+ const sunset=[17.1,17.8,18.4,20.0,20.5,21.0,21.0,20.5,19.6,18.6,17.0,16.8][m],sunrise=[7.9,7.4,6.6,6.7,6.0,5.6,5.8,6.3,6.9,7.4,7.0,7.6][m];return h<sunrise||h>=sunset}
+function applyTheme(){const night=inTunnel||THEME==="night"||(THEME==="auto"&&isNightByClock());const was=document.body.classList.contains("night");document.body.classList.toggle("night",night);
+ $("bTheme").textContent=THEME==="auto"?"🌗 Auto":THEME==="night"?"🌙 Notte":"☀️ Giorno";$("tun").classList.toggle("hidden",!inTunnel);
+ if(map&&mapKind==="3d"&&was!==night)tint3d(night)}
+function tint3d(n){try{map.getStyle().layers.forEach(l=>{if(l.type==="background")map.setPaintProperty(l.id,"background-color",n?"#0e1830":"#f2efe9")});if(map.getLayer("b3d"))map.setPaintProperty("b3d","fill-extrusion-color",n?"#2a3b63":"#c9d3e6")}catch(e){}}
+function cycleTheme(){THEME=THEME==="auto"?"night":THEME==="night"?"day":"auto";LS.set("theme",THEME);applyTheme();say(THEME==="auto"?"Modalità automatica: giorno o notte secondo l'ora.":THEME==="night"?"Modalità notte.":"Modalità giorno.")}
+function setTunnel(v){if(v===inTunnel)return;inTunnel=v;applyTheme();if(v&&!V.speaking)say("Entri in galleria: accendi le luci anabbaglianti e mantieni la distanza.")}
+// galleria: se stavi andando oltre 20 km/h e il GPS sparisce per più di 6 secondi; oppure la telecamera vede buio
+setInterval(()=>{if(lastSpeed>5.5&&Date.now()-lastFix>6000)setTunnel(true);else if(Date.now()-lastFix<3000&&inTunnel&&!camDark)setTunnel(false);applyTheme()},2000);
+let camDark=false;const cvs=document.createElement("canvas");cvs.width=32;cvs.height=24;
+setInterval(()=>{const v=$("vid");if(!stream||!v.videoWidth||$("cam").classList.contains("off"))return;try{const c=cvs.getContext("2d");c.drawImage(v,0,0,32,24);const d=c.getImageData(0,0,32,24).data;let L=0;for(let i=0;i<d.length;i+=4)L+=d[i]*.3+d[i+1]*.59+d[i+2]*.11;L/=d.length/4;
+ const dark=L<45;if(dark!==camDark){camDark=dark;if(!isNightByClock()&&lastSpeed>3)setTunnel(dark)}}catch(e){}},1500);
+applyTheme();
+
+checks();
+if(LS.get("read",false))toggleRead();
+// prima schermata già pronta dietro al pulsante
+(function(){const p=PLAN[POS.step]||PLAN[0];const s=p.s||(p.q&&p.q.s);setPhoto(s?s.id:p.img||"curva_dx");$("sign").innerHTML=head("★",p.title||(s&&s.n)||"Pronto")+`<div class="sbody"><div class="stext">Tocca INIZIA: da quel momento l'app va avanti da sola.</div></div>`;prog()})();
+</script>
+</body>
+</html>
